@@ -1,4 +1,5 @@
-import time
+from __future__ import print_function
+import os
 import re
 import requests
 from lxml import etree
@@ -17,10 +18,25 @@ from ..utils import Content
 
 class WebdavDataSource(DataSourceBase):
     """
-
+    Query an owncloud folder through its webdav API.
     """
-    def __init__(self, url=None, token=None, *args, **kwargs):
-        super(WebdavDataSource, self).__init__(*args, **kwargs)
+    def __init__(self, url=None, token=None, dirname=None, *args, **kwargs):
+        """
+        constructor
+
+        :param url: the root url of the owncloud server 
+        :param token: the access token of the publicly shared folder
+        :param args: None
+        :param kwargs: None
+        """
+        super(WebdavDataSource, self).__init__(url=url, *args, **kwargs)
+
+        self.token = token
+        """The access token to the directory 'dirname'"""
+
+        self.dirname = dirname
+        """The dirname corresponding to self.token"""
+
         self._xml_payload = (
             """<?xml version="1.0"?><d:propfind  xmlns:d="DAV:" """
             """xmlns:oc="http://owncloud.org/ns"><d:prop>"""
@@ -60,6 +76,22 @@ class WebdavDataSource(DataSourceBase):
             self._headers['Depth'] = old_depth
 
         return flat_contents
+
+    def ls_url(self, **kwargs):
+        """
+        return a dictionary of the paths on the server as keys and the values
+        are pairs of the content object itself and the the download urls.
+
+        :param kwargs: The recursive keyword is passed to self.ls() 
+        :return: dict
+        """
+        flat_contnet = self.ls(**kwargs)
+        download_urls = self.get_download_urls(flat_contnet)
+
+        return {
+            content.name: (content, url) for
+            content, url in zip(flat_contnet, download_urls)
+        }
 
     @staticmethod
     def strip_namespaces(xml_str):
@@ -133,3 +165,23 @@ class WebdavDataSource(DataSourceBase):
             )
             for href, prop in parsed_xml_content
         ]
+
+    def get_download_urls(self, flat_contnet):
+        """
+        generate the owncloud download urls for a list of Content objects
+        """
+        download_urls = []
+
+        for content in flat_contnet:
+            dir_path = os.path.dirname(content.name)
+            basename = os.path.basename(content.name)
+
+            download_url = 'download?path={dir_path}&files={fname}'.format(
+                dir_path=dir_path.replace('/', '%2F'),
+                fname=basename
+            )
+            download_urls.append(download_url)
+
+        url = '{}/index.php/s/{}/'.format(self._url, self.dirname)
+
+        return map(lambda x: url + '/' + x, download_urls)
