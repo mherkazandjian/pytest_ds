@@ -38,6 +38,7 @@ class Query(object):
                  root_url=None,
                  crawler_enabled=True,
                  index_url_enabled=False,
+                 index_webdav_enabled=False,
                  setup_cache=True,
                  config=None):
         """
@@ -86,31 +87,37 @@ class Query(object):
             self.config = self.setup_configuration(self.config_path)
             self._check_set_attributes_from_config()
 
-        x = WebdavDataSource()
-        v = x.ls()
-        x.parse_xml_content(v)
+        if index_webdav_enabled:
+            webdav_content = WebdavDataSource(
+                self._url,
+                self.config.get('RemoteDataSource', 'webdav_token'),
+                self.config.get('RemoteDataSource', 'owncloud_dirname'),
+            )
+
+            self.fs_paths = webdav_content.ls_url(recursive=True)
+            self.contents = [content for _, (content, _) in self.fs_paths.items()]
 
         # get the content info from the index url only
-        if index_url_enabled:
-            if self.config.get('RemoteDataSource', 'has_index_file') == 'yes':
-                if self.config.get('RemoteDataSource', 'crawl') == 'no':
-                    self.contents = self._setup_content_from_index_url()
-
-        # get the cotnent info by crawling the rool url
-        if crawler_enabled:
-            if self.config.get('RemoteDataSource', 'crawl') == 'yes':
-                self.contents = self._setup_content_by_crawling_roo_url()
-
-        # set up the content from cache file, no crawling or index reading
-        # the cache and the content will be identical
-        if (index_url_enabled or crawler_enabled) and self.contents == []:
-            if self.config.get('RemoteDataSource', 'from_cache') == 'yes':
-                print('reading content from cache file')
-                _query = self.from_cache(self.config_path)
-                self.contents = _query.contents
-
-        if self.contents is not None:
-            self.hash()
+        # if index_url_enabled:
+        #     if self.config.get('RemoteDataSource', 'has_index_file') == 'yes':
+        #         if self.config.get('RemoteDataSource', 'crawl') == 'no':
+        #             self.contents = self._setup_content_from_index_url()
+        #
+        # # get the cotnent info by crawling the rool url
+        # if crawler_enabled:
+        #     if self.config.get('RemoteDataSource', 'crawl') == 'yes':
+        #         self.contents = self._setup_content_by_crawling_roo_url()
+        #
+        # # set up the content from cache file, no crawling or index reading
+        # # the cache and the content will be identical
+        # if (index_url_enabled or crawler_enabled) and self.contents == []:
+        #     if self.config.get('RemoteDataSource', 'from_cache') == 'yes':
+        #         print('reading content from cache file')
+        #         _query = self.from_cache(self.config_path)
+        #         self.contents = _query.contents
+        #
+        # if self.contents is not None:
+        #     self.hash()
 
         if setup_cache:
             self.setup_cache()
