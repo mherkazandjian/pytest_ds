@@ -19,41 +19,12 @@ import pickle
 import ConfigParser
 import threading
 
-from .utils import (
-    ElementsFinder, download_file, download_file_to_buffer,
-    WebdavDataSource
+from pytest_ds.utils import (
+    ElementsFinder, download_file, download_file_to_buffer, Content
 )
 
+from pytest_ds.data_sources.owncloud import WebdavDataSource
 
-class Content(object):
-    """
-    Storage for items/content.
-    """
-    def __init__(self, content_type, name, mtime):
-        """
-        constructor
-
-        :param content_type: type of content (dir, file, symlink...) 
-        :param name: the name of the content (e.g the file name)
-        :param mtime: the last modification time
-        """
-        self.type = content_type
-        """the type of the cotent dir/file """
-
-        self.name = name
-        """the name of the content (e.g. filename)"""
-
-        self.mtime = mtime
-        """the last modification time """
-
-        self.subdir = []
-        """the content of the object if it is a subdir"""
-
-        self.msize = None    # not used
-        """the size of the in bytes"""
-
-        self.md5 = None      # not used
-        """the md5sum of the file"""
 
 
 class Query(object):
