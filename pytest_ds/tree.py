@@ -27,7 +27,6 @@ from pytest_ds.utils import (
 from pytest_ds.data_sources.owncloud import WebdavDataSource
 
 
-
 class Query(object):
     """
     Content handler. Provide functionality to syncronize content obtained
@@ -140,7 +139,7 @@ class Query(object):
         :return: self.fs_paths without the items that do not match the regex'es
         """
         retval = dict()
-        for expr_str in regex_config.split(',\n'):
+        for expr_str in regex_config.split('\n'):
             regex = re.compile(expr_str)
             for fs_path in self.fs_paths:
                 if regex.match(fs_path):
@@ -303,6 +302,7 @@ class Query(object):
         list all the urls
         """
         print('{} urls {}'.format('-'*50, '-'*50))
+        print('found {} items'.format(len(self.fs_paths)))
         for fs_path, (_, download_url) in self.fs_paths.items():
             print(fs_path, download_url)
         print('{} end urls {}'.format('-'*50, '-'*50))
