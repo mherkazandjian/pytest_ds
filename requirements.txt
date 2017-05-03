@@ -1,4 +1,2 @@
 lxml
 requests
-numpy>=1.6
-wheel
