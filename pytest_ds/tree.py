@@ -18,6 +18,7 @@ from os.path import expanduser
 import cPickle as pickle
 import ConfigParser
 import threading
+import re
 
 from pytest_ds.utils import (
     ElementsFinder, download_file, download_file_to_buffer, Content
@@ -95,7 +96,16 @@ class Query(object):
             )
 
             self.fs_paths = webdav_content.ls_url(recursive=True)
-            self.contents = [content for _, (content, _) in self.fs_paths.items()]
+
+            if self.config.has_option('RemoteDataSource', 'include_regex'):
+                self.fs_paths = self.filter_paths(
+                    self.config.get('RemoteDataSource', 'include_regex')
+                )
+
+            self.contents = [
+                content
+                for _, (content, _) in self.fs_paths.items()
+            ]
 
         # get the content info from the index url only
         # if index_url_enabled:
@@ -121,6 +131,21 @@ class Query(object):
 
         if setup_cache:
             self.setup_cache()
+
+    def filter_paths(self, regex_config):
+        """given the value of the 'include_regex' key of the configuration file
+        keep only the paths that match the regex 
+        
+        :param regex_config: value of 'include_regex'
+        :return: self.fs_paths without the items that do not match the regex'es
+        """
+        retval = dict()
+        for expr_str in regex_config.split(',\n'):
+            regex = re.compile(expr_str)
+            for fs_path in self.fs_paths:
+                if regex.match(fs_path):
+                    retval[fs_path] = self.fs_paths[fs_path]
+        return retval
 
     def _check_set_attributes_from_config(self):
         """
@@ -336,9 +361,6 @@ class Query(object):
         self.depth -= 1
         return conents_paths
 
-    def get_download_urls(self):
-        return self.get_download_urls_owncloud()
-
     @staticmethod
     def get_owncloud_download_url_from_fs_path(root_url, fs_path):
         """return the download url of a file specified relative to the top
@@ -358,7 +380,7 @@ class Query(object):
         )
         return retval
 
-    def get_download_urls_owncloud(self):
+    def get_download_urls(self):
         """
         generate the owncloud download urls of all the content.
         """
