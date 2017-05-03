@@ -15,7 +15,7 @@ supported:
 """
 import os
 from os.path import expanduser
-import pickle
+import cPickle as pickle
 import ConfigParser
 import threading
 
@@ -404,7 +404,7 @@ class Query(object):
 
         if os.path.isfile(cache_path):
             print('loading cache from {}'.format(cache_path))
-            contents = pickle.load(open(cache_path))
+            contents = pickle.load(open(cache_path, 'rb'))
         else:
             print('cache file not found:\n\t{}'.format(cache_path))
             contents = []

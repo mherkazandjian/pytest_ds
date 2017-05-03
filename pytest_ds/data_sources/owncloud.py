@@ -161,7 +161,7 @@ class WebdavDataSource(DataSourceBase):
             Content(
                 content_type='file',
                 name=href.replace('/public.php/webdav/', ''),
-                mtime=prop.xpath('.//getlastmodified/text()')
+                mtime=str(prop.xpath('.//getlastmodified/text()')[0])
             )
             for href, prop in parsed_xml_content
         ]
