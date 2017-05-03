@@ -40,41 +40,11 @@ DOCS_DIRECTORY = 'docs'
 TESTS_DIRECTORY = 'tests'
 PYTEST_FLAGS = ['--doctest-modules']
 
-# Import metadata. Normally this would just be:
-#
-#     from pybotgammon import metadata
-#
-# However, when we do this, we also import `pybotgammon/__init__.py'. If this
-# imports names from some other modules and these modules have third-party
-# dependencies that need installing (which happens after this file is run), the
-# script will crash. What we do instead is to load the metadata module by path
-# instead, effectively side-stepping the dependency problem. Please make sure
-# metadata has no dependencies, otherwise they will need to be added to
-# the setup_requires keyword.
 metadata = imp.load_source(
     'metadata', os.path.join(CODE_DIRECTORY, 'metadata.py'))
 
 
 ## Miscellaneous helper functions
-
-def generate_data_files():
-    """generate the 'data_files' that will be passed to setup()"""
-    if 'setup.py' in sys.argv:
-        if 'build' in sys.argv:
-            return []
-        elif 'sdist' in sys.argv:
-            return []
-        elif 'install' in sys.argv:
-            return [
-                ('dist',
-                 ['dist/pytest_ds-{}-py2.py3-none-any.whl'.format(
-                     metadata.version)]
-                 )
-            ]
-        else:
-            return []
-    else:
-        return []
 
 
 def get_project_files():
@@ -137,12 +107,6 @@ def git_ls_files(*cmd_args):
     cmd = ['git', 'ls-files']
     cmd.extend(cmd_args)
     return set(subprocess.check_output(cmd).splitlines())
-
-
-def dump_git_hash_to_file():
-    """write the git hash of the current commit to git-hash.txt"""
-    with open('git-hash.txt', 'w') as fobj:
-        fobj.write(get_git_version())
 
 
 def print_success_message(message):
@@ -295,7 +259,6 @@ setup_dict = dict(
             'pytest_ds_cli = pytest_ds.main:entry_point'
         ],
     },
-    data_files=generate_data_files(),
 )
 
 
