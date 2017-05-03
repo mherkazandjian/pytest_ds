@@ -103,6 +103,7 @@ URL: <{url}>
             pdb.post_mortem()
         else:
             logger.info('exception raised')
+            logger.info('\t{}'.format(repr(e)))
             logger.info('exitting gracefully.')
         retval = 1
     else:
