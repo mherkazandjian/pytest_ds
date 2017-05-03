@@ -27,4 +27,3 @@ class DataSourceBase(object):
         :return: 
         """
         raise NotImplementedError('should be implemented by subclass')
-

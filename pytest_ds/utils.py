@@ -2,6 +2,8 @@ from __future__ import print_function
 import re
 import StringIO
 import time
+from collections import OrderedDict
+
 from lxml import etree
 
 
@@ -241,3 +243,15 @@ def download_file(url, local_url, auth=None):
         return False
     else:
         return True
+
+
+def sort_dict_by_key(in_dict):
+    """return the input dictionary as an ordered dictionary sorted by key
+    
+    :param value: a dictionary
+    :return: ordered dictionary 
+    """
+    retval = OrderedDict()
+    for key in sorted(in_dict):
+        retval[key] = in_dict[key]
+    return retval

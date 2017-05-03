@@ -13,7 +13,7 @@ requests.packages.urllib3.disable_warnings(InsecurePlatformWarning)
 requests.packages.urllib3.disable_warnings(SNIMissingWarning)
 
 from .interface import DataSourceBase
-from ..utils import Content
+from ..utils import Content, sort_dict_by_key
 
 
 class WebdavDataSource(DataSourceBase):
@@ -88,10 +88,12 @@ class WebdavDataSource(DataSourceBase):
         flat_contnet = self.ls(**kwargs)
         download_urls = self.get_download_urls(flat_contnet)
 
-        return {
+        hashed = {
             content.name: (content, url) for
             content, url in zip(flat_contnet, download_urls)
         }
+
+        return sort_dict_by_key(hashed)
 
     @staticmethod
     def strip_namespaces(xml_str):

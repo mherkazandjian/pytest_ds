@@ -21,8 +21,8 @@ import threading
 import re
 
 from pytest_ds.utils import (
-    ElementsFinder, download_file, download_file_to_buffer, Content
-)
+    ElementsFinder, download_file, download_file_to_buffer, Content,
+    sort_dict_by_key)
 
 from pytest_ds.data_sources.owncloud import WebdavDataSource
 
@@ -145,7 +145,7 @@ class Query(object):
             for fs_path in self.fs_paths:
                 if regex.match(fs_path):
                     retval[fs_path] = self.fs_paths[fs_path]
-        return retval
+        return sort_dict_by_key(retval)
 
     def _check_set_attributes_from_config(self):
         """
@@ -303,8 +303,8 @@ class Query(object):
         list all the urls
         """
         print('{} urls {}'.format('-'*50, '-'*50))
-        for download_url in self.get_download_urls():
-            print(download_url)
+        for fs_path, (_, download_url) in self.fs_paths.items():
+            print(fs_path, download_url)
         print('{} end urls {}'.format('-'*50, '-'*50))
 
     def show(self):
