@@ -122,11 +122,13 @@ def _main(args):
     syncer = Query(config=config_path, index_webdav_enabled=True)
 
     if args.dry == 0:
-        syncer.sync()
+        syncer.sync(dry=False)
     elif args.dry == 1:
         syncer.ls_url()
+        syncer.sync(dry=True)
     else:
-        raise ValueError('--dry is specified more than once. unknown behavior.')
+        msg = '--dry is specified more than once. unknown behavior.'
+        raise ValueError(msg)
 
 
 def find_config_file(config_file):

@@ -83,6 +83,9 @@ class Query(object):
         self._condition = threading.Condition()
         """condition used for parallel downloads in updating cache"""
 
+        self._download_threads = None
+        """number of threads used to download, one thread per file"""
+
         if self.config_path is not None:
             self.config = self.setup_configuration(self.config_path)
             self._check_set_attributes_from_config()
@@ -153,6 +156,11 @@ class Query(object):
         """
         if self._url is None:
             self._url = self.config.get('RemoteDataSource', 'root_url')
+
+        if self.config.has_option('Download', 'threads'):
+            self._download_threads = int(self.config.get('Download', 'threads'))
+        else:
+            self._download_threads = 1
 
     @staticmethod
     def setup_configuration(config_path):
@@ -454,7 +462,7 @@ class Query(object):
                                         self.get_download_urls())
         }
 
-    def _update_local_cache_file(self, fs_path, download_url, content):
+    def _update_local_cache_file(self, fs_path, download_url, content, dry):
         """syncronize the download_url
         
         :param fs_path: the path relative to the data dir
@@ -472,16 +480,17 @@ class Query(object):
             self._condition.release()
 
         # if content is a directory, create it
-        if content.type == 'dir':
-            safe_makedirs(local_abs_path)
-        else:
-            safe_makedirs(local_abs_dir)
+        if not dry:
+            if content.type == 'dir':
+                safe_makedirs(local_abs_path)
+            else:
+                safe_makedirs(local_abs_dir)
 
-            # download and update the cache if the download is successfull
-            if download_file(download_url, local_abs_path):
-                self._condition.acquire()
-                self.fs_paths[fs_path] = (content, download_url)
-                self._condition.release()
+                # download and update the cache if the download is successfull
+                if download_file(download_url, local_abs_path):
+                    self._condition.acquire()
+                    self.fs_paths[fs_path] = (content, download_url)
+                    self._condition.release()
 
     def cache_file_is_in_localdir(self, fs_path):
         """
@@ -495,7 +504,7 @@ class Query(object):
         retval = True if os.path.exists(local_abs_path) else False
         return retval
 
-    def _sync_file(self, fs_path, download_url, content):
+    def _sync_file(self, fs_path, download_url, content, dry):
         """
         syncronzie the file at "download_url" to local path "fs_path" using
         metadata from the object "content"
@@ -503,23 +512,25 @@ class Query(object):
         if fs_path not in self.cache.fs_paths:
             # new file no found in cache
             # download the download_url to fs_path
-            print('file not in local cache: {}'.format(fs_path))
-            self._update_local_cache_file(fs_path, download_url, content)
+            print('file not in local cache: {}\n'.format(fs_path))
+            self._update_local_cache_file(fs_path, download_url, content, dry)
         elif fs_path in self.cache.fs_paths:
             # file exists in cache db but has a more recent mtime on remote
             cache_content, _ = self.cache.fs_paths[fs_path]
 
             if not self.cache_file_is_in_localdir(fs_path):
-                print('file not in local data dir: {}'.format(fs_path))
+                print('file in local cache but not in '
+                      'local data dir: {}\n'.format(fs_path))
                 self._update_local_cache_file(
-                    fs_path, download_url, content)
+                    fs_path, download_url, content, dry)
                 return
 
             if cache_content.mtime != content.mtime:
                 # download the download_url to fs_path
-                print('file modified: {}'.format(fs_path))
+                print('file in local data dir but is modified: {}\n'.format(
+                    fs_path))
                 self._update_local_cache_file(
-                    fs_path, download_url, content)
+                    fs_path, download_url, content, dry)
             else:
                 # nothing to do
                 pass
@@ -528,7 +539,7 @@ class Query(object):
             msg = 'idk why it should get here, might be interesting'
             raise RuntimeError(msg)
 
-    def sync(self, n_threads=10):
+    def sync(self, n_threads=10, dry=True):
         """
         syncronize the local cache and data files with the remote url by
         checking the last modification time. Items on remote that have a more
@@ -545,6 +556,7 @@ class Query(object):
                 self._condition.release()
 
                 if args is not None:
+                    args += (dry,)
                     self._sync_file(*args)
                 else:
                     break
@@ -562,4 +574,5 @@ class Query(object):
         for thread in threads:
             thread.join()
 
-        self.write_cache()
+        if not dry:
+            self.write_cache()
