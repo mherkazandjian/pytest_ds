@@ -48,9 +48,12 @@ class Query(object):
         :param crawler_enabled: If True, crawling urls in enabled. If false
          the crawling is disabled even if crawling config variable is enabled
          in the configuration variable.
-        :param index_url_enabled: if True, getting the content info from the
-         index url is enabled. if False getting infor from the index url is 
+        :param bool index_url_enabled: if True, getting the content info from
+         the index url is enabled. if False getting info from the index url is
          disabled even if it is enabled in the configuration variable.
+        :param bool index_webdav_enabled: if True, the index of the content
+         of the webdav server is fetched. if False content info from the webdav
+         server is disabled even if it is enabled in the config file.
         :param setup_cache: if True read the cache from disk
         """
         self._url = root_url
