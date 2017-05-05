@@ -11,7 +11,6 @@ tree = Query(config=config_file, index_webdav_enabled=True)
 # tree.show()
 # tree.ls()
 # tree.ls_url()
-
 # tree.sync()
 
 print('done')
