@@ -15,6 +15,7 @@ supported:
 """
 import os
 from os.path import expanduser
+import stat
 import cPickle as pickle
 import ConfigParser
 import threading
@@ -579,3 +580,19 @@ class Query(object):
 
         if not dry:
             self.write_cache()
+
+    def generate_wget_bash_script(self, script_path):
+        """write a bash script that when executed downloads all the data
+        
+        :param str script_path: path to the script on disk 
+        """
+        with open(script_path, 'w') as fobj:
+            fobj.write('#!/usr/bin/env bash\n')
+            for fs_path, (_, url) in self.fs_paths.items():
+                fobj.write('mkdir -p {}\n'.format(os.path.dirname(fs_path)))
+                fobj.write('wget "{url}" -O {fs_path}\n'.format(
+                    url=url,
+                    fs_path=fs_path
+                ))
+                st = os.stat(script_path)
+                os.chmod(script_path, st.st_mode | stat.S_IEXEC)
