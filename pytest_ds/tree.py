@@ -91,6 +91,7 @@ class Query(object):
         """number of threads used to download, one thread per file"""
 
         if self.config_path is not None:
+            assert os.path.isfile(self.config_path)
             self.config = self.setup_configuration(self.config_path)
             self._check_set_attributes_from_config()
 
