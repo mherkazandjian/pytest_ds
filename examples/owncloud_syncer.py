@@ -1,16 +1,14 @@
 from __future__ import print_function
-import os
 
 from pytest_ds.tree import Query
 
-config_file = os.path.expanduser('~/tmp/owncloud_pytest_ds_webdav.ini')
-# config_file = os.path.expanduser('~/tmp/surfdrive.ini')
+config_file = '../sample/configs/webdav_test.ini'
 
 tree = Query(config=config_file, index_webdav_enabled=True)
 
-# tree.show()
+tree.show()
 # tree.ls()
-# tree.ls_url()
-# tree.sync()
+tree.ls_url()
+tree.sync(n_threads=10, dry=False)
 
 print('done')
