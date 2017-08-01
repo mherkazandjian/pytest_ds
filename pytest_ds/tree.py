@@ -90,6 +90,9 @@ class Query(object):
         self._download_threads = None
         """number of threads used to download, one thread per file"""
 
+        self.summary = dict(new=[], modified=[])
+        """dict that contains the list of new and modified files"""
+
         if self.config_path is not None:
             assert os.path.isfile(self.config_path)
             self.config = self.setup_configuration(self.config_path)
@@ -138,6 +141,24 @@ class Query(object):
 
         if setup_cache:
             self.setup_cache()
+
+    def update_summary(self, change_type, item_name):
+        """
+        insert an item into the attribute self.summary
+
+        a modified item or a new item wrt to the local cache/storage is
+        inserted into the dictionary self.summary by specifying the what is 
+        "new" with the item "item_name".
+
+        :param str change_type: one of the keys of self.summary, e.g. either
+         'modified' or 'new'
+        :param str item_name: the name of the item, e.g. a path or a relative
+         path
+        """
+        self._condition.acquire()
+        assert change_type in self.summary.keys()
+        self.summary[change_type].append(item_name)
+        self._condition.release()
 
     def filter_paths(self, regex_config):
         """given the value of the 'include_regex' key of the configuration file
@@ -519,9 +540,11 @@ class Query(object):
             # download the download_url to fs_path
             print('file not in local cache: {}\n'.format(fs_path))
             self._update_local_cache_file(fs_path, download_url, content, dry)
+            self.update_summary('new', download_url)
         elif fs_path in self.cache.fs_paths:
             # file exists in cache db but has a more recent mtime on remote
             cache_content, _ = self.cache.fs_paths[fs_path]
+            self.update_summary('modified', download_url)
 
             if not self.cache_file_is_in_localdir(fs_path):
                 print('file in local cache but not in '

@@ -126,6 +126,15 @@ def _main(args):
     elif args.dry == 1:
         syncer.ls_url()
         syncer.sync(dry=True)
+
+        logger.info(
+            'new items to be downloaded = {}'.format(
+                len(syncer.summary['new']))
+        )
+        logger.info(
+            'modified items to be download = {}'.format(
+                len(syncer.summary['modified']))
+        )
     else:
         msg = '--dry is specified more than once. unknown behavior.'
         raise ValueError(msg)
