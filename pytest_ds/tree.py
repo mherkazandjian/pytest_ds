@@ -564,7 +564,7 @@ class Query(object):
                 pass
         else:
             # i wonder why it should reach here, raise exception anyway
-            msg = 'idk why it should get here, might be interesting'
+            msg = 'idk why execution should reach here, might be interesting'
             raise RuntimeError(msg)
 
     def sync(self, n_threads=10, dry=True):
@@ -573,6 +573,10 @@ class Query(object):
         checking the last modification time. Items on remote that have a more
         recent modification time are downloaded and the cache metadata is
         updated.
+
+        :param int n_threads: number of simultaneous downloads  
+        :param bool dry: if True, the sync process is simulated without
+         actually downloading data
         """
         def worker(_work_producer):
             while True:
