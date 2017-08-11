@@ -530,27 +530,33 @@ class Query(object):
         retval = True if os.path.exists(local_abs_path) else False
         return retval
 
-    def _sync_file(self, fs_path, download_url, content, dry):
+    def _sync_file(self, fs_path, url, content, dry):
         """
-        syncronzie the file at "download_url" to local path "fs_path" using
+        Syncronzie a file at "url" to local fs_path
+
+        the file at "download_url" to local path "fs_path" using
         metadata from the object "content"
+
+        :param fs_path: the path relative to the data dir
+        :param url: the download url
+        :param content: the content object
         """
         if fs_path not in self.cache.fs_paths:
             # new file no found in cache
             # download the download_url to fs_path
             print('file not in local cache: {}\n'.format(fs_path))
-            self._update_local_cache_file(fs_path, download_url, content, dry)
-            self.update_summary('new', download_url)
+            self._update_local_cache_file(fs_path, url, content, dry)
+            self.update_summary('new', url)
         elif fs_path in self.cache.fs_paths:
             # file exists in cache db but has a more recent mtime on remote
             cache_content, _ = self.cache.fs_paths[fs_path]
-            self.update_summary('modified', download_url)
+            self.update_summary('modified', url)
 
             if not self.cache_file_is_in_localdir(fs_path):
                 print('file in local cache but not in '
                       'local data dir: {}\n'.format(fs_path))
                 self._update_local_cache_file(
-                    fs_path, download_url, content, dry)
+                    fs_path, url, content, dry)
                 return
 
             if cache_content.mtime != content.mtime:
@@ -558,7 +564,7 @@ class Query(object):
                 print('file in local data dir but is modified: {}\n'.format(
                     fs_path))
                 self._update_local_cache_file(
-                    fs_path, download_url, content, dry)
+                    fs_path, url, content, dry)
             else:
                 # nothing to do
                 pass
@@ -569,6 +575,8 @@ class Query(object):
 
     def sync(self, n_threads=10, dry=True):
         """
+        Syncronize local cache with the remote content
+
         syncronize the local cache and data files with the remote url by
         checking the last modification time. Items on remote that have a more
         recent modification time are downloaded and the cache metadata is
@@ -598,8 +606,10 @@ class Query(object):
                 yield fs_path, download_url, content
 
         producer = work_producer()
-        threads = [threading.Thread(target=worker, args=(producer,))
-                   for tid in range(n_threads)]
+        threads = [
+            threading.Thread(target=worker, args=(producer,))
+            for _ in range(n_threads)
+        ]
 
         for thread in threads:
             thread.start()
@@ -610,9 +620,10 @@ class Query(object):
             self.write_cache()
 
     def generate_wget_bash_script(self, script_path):
-        """write a bash script that when executed downloads all the data
+        """
+        Write a bash script that when executed downloads all the data
         
-        :param str script_path: path to the script on disk 
+        :param str script_path: path to the script on disk
         """
         with open(script_path, 'w') as fobj:
             fobj.write('#!/usr/bin/env bash\n')
