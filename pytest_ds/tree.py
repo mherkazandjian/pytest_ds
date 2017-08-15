@@ -117,28 +117,6 @@ class Query(object):
                 for _, (content, _) in self.fs_paths.items()
             ]
 
-        # get the content info from the index url only
-        # if index_url_enabled:
-        #     if self.config.get('RemoteDataSource', 'has_index_file') == 'yes':
-        #         if self.config.get('RemoteDataSource', 'crawl') == 'no':
-        #             self.contents = self._setup_content_from_index_url()
-        #
-        # # get the cotnent info by crawling the rool url
-        # if crawler_enabled:
-        #     if self.config.get('RemoteDataSource', 'crawl') == 'yes':
-        #         self.contents = self._setup_content_by_crawling_roo_url()
-        #
-        # # set up the content from cache file, no crawling or index reading
-        # # the cache and the content will be identical
-        # if (index_url_enabled or crawler_enabled) and self.contents == []:
-        #     if self.config.get('RemoteDataSource', 'from_cache') == 'yes':
-        #         print('reading content from cache file')
-        #         _query = self.from_cache(self.config_path)
-        #         self.contents = _query.contents
-        #
-        # if self.contents is not None:
-        #     self.hash()
-
         if setup_cache:
             self.setup_cache()
 
@@ -210,22 +188,6 @@ class Query(object):
         config.read(config_path)
         return config
 
-    def _setup_content_by_crawling_roo_url(self):
-        """
-        fetch the content info by crawling the root url recursively. If the
-        finder (crawler) is not supported,
-        """
-        self.finder = ElementsFinder()
-        if self.finder.enabled:
-            contents = self.owncloud_crawl(self._url)
-        else:
-            print('can not crawl root_url, consider setting up content from\n'
-                  'a cache file, or reading the content tree from a tree\n'
-                  'dump file')
-            contents = self._setup_content_from_index_url()
-
-        return contents
-
     def _setup_content_from_index_url(self):
         """try to obtain the file index from the remote folder through http
         and parse it and return the content tree, the content that would be
@@ -292,46 +254,6 @@ class Query(object):
         else:
             # no subdir content to be processed
             pass
-
-        return contents
-
-    def owncloud_crawl(self, url):
-        """
-        Crawl the url and find all the data. The url is crawled recursively.
-
-        :return: A tree of Content objects
-        """
-        self.depth += 1
-
-        self.finder.get(url)
-        elements = self.finder.find_table_elements()
-
-        contents = []
-        for element in elements:
-            contents.append(Content(
-                element.get_attribute('data-type').encode(),
-                element.get_attribute('data-file').encode(),
-                element.get_attribute('data-mtime').encode()
-            ))
-
-        for content in contents:
-            print('{indentation}{:5} {:10} {}'.format(
-                content.type,
-                content.mtime,
-                content.name,
-                indentation='\t' * self.depth)
-            )
-
-            if content.type == 'dir':
-                if self.depth == 1:
-                    path_html_key = '?path='
-                else:
-                    path_html_key = ''
-                sub_url = '{url}{path_html_key}%2F{sub_dir}'.format(
-                    url=url, path_html_key=path_html_key, sub_dir=content.name)
-                content.subdir = self.owncloud_crawl(sub_url)
-
-        self.depth -= 1
 
         return contents
 
