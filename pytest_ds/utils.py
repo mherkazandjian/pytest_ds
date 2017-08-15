@@ -2,6 +2,7 @@ from __future__ import print_function
 import re
 import StringIO
 import time
+import hashlib
 from collections import OrderedDict
 
 from lxml import etree
@@ -255,3 +256,33 @@ def sort_dict_by_key(in_dict):
     for key in sorted(in_dict):
         retval[key] = in_dict[key]
     return retval
+
+
+def calculate_md5sum(path, expected_md5sum=None):
+    """
+    Compute the md5sum of a file located a 'path'
+
+    :param str path: the path to the file
+    :param str expected_md5sum: the expected md5sum of the file
+    :return: str: the md5sum
+    """
+    _hash = hashlib.md5()
+    with open(path, "rb") as fobj:
+        for chunk in iter(lambda: fobj.read(4096), b""):
+            _hash.update(chunk)
+    local_md5sum = _hash.hexdigest()
+
+    if expected_md5sum is not None:
+        if local_md5sum == expected_md5sum:
+            return local_md5sum
+        else:
+            msg = (
+                'the md5sum of {} does not match the expected md5sum\n'
+                'The corresponding md5sum are\n{}\n{}\n').format(
+                path,
+                local_md5sum,
+                expected_md5sum
+            )
+            raise AssertionError(msg)
+    else:
+        return local_md5sum

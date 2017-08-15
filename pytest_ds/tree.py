@@ -142,6 +142,19 @@ class Query(object):
         if setup_cache:
             self.setup_cache()
 
+    def absolute_fs_paths(self):
+        """
+        Return a flat list of the absolute paths of the content
+
+        The data directory is prepended to the self.fs_paths
+
+        :return: list
+        """
+        local_data_dir = expanduser(self.config.get('LocalStorage', 'datadir'))
+
+        return [os.path.join(local_data_dir, fpath) for fpath in self.fs_paths]
+
+
     def update_summary(self, change_type, item_name):
         """
         insert an item into the attribute self.summary
@@ -364,8 +377,7 @@ class Query(object):
 
     def get_file_system_paths(self):
         """
-        generate the files system paths from the full content of the
-        object
+        generate the files system paths from the full content of the object
         """
         self.depth = 0
         return self._get_file_system_paths(self.contents)
